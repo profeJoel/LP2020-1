@@ -6,7 +6,8 @@ import io
 print("Bienvenido al juego del Ahorcado!")
 
 #archivo = open("lemario-espanol.txt", "r")
-archivo = io.open("lemario-espanol.txt", mode="r",encoding="latin-1")
+#archivo = io.open("lemario-espanol.txt", mode="r",encoding="latin-1")
+archivo = io.open("lemario-general-del-espanol.txt", mode="r",encoding="utf-8")
 
 palabras = []
 
@@ -17,7 +18,7 @@ for palabra in archivo:
 posicion_aleatoria = r.randrange(0,len(palabras))
 #print(">> " + palabras[posicion_aleatoria][:-1] + " >> " + str(posicion_aleatoria))
 print(">> " + palabras[24][:-1] + ">>"+ str(len(palabras[24][:-1])))
-if palabras[24][:-1][4:-1] == 'ï¿½':
+if palabras[24][:-1][4:-1] in 'áéíóúü':
     print("si")
 else:
     print("NO lo reconoce")

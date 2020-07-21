@@ -1,0 +1,81 @@
+import pygame, random
+from pygame.locals import *
+
+pygame.init()
+
+ANCHO_VENTANA = 800
+ALTO_VENTANA = 600
+ventana = pygame.display.set_mode((ANCHO_VENTANA,ALTO_VENTANA))
+pygame.display.set_caption("El primer juego en LP")
+tiempo = pygame.time.Clock()
+
+# colores RGB
+NEGRO = (0,0,0)
+GRIS = (200,200,200)
+BLANCO = (255,255,255)
+
+#atributos de figuras
+rect_ancho = 100
+rect_alto = 100
+rect_x = 300
+rect_y = 400
+rect_color = BLANCO
+rect_velocidad = 30
+
+#atributos de la imagen
+auto_imagen = pygame.image.load("racecar.png")
+auto_velocidad = 10
+auto_ancho = auto_imagen.get_width()
+auto_alto = auto_imagen.get_height()
+auto_x = (ANCHO_VENTANA-auto_ancho)//2
+auto_y = ALTO_VENTANA - auto_alto
+
+#Atributos de la ventana
+fondo = pygame.image.load("fondo.png")
+sonido_choque = pygame.mixer.Sound('snd/choque.wav')
+
+#variables de Bloques
+bloque_velocidad = 10
+bloque_alto = 100
+bloque_ancho = 100
+bloque_x = random.randint(0,ANCHO_VENTANA-bloque_ancho)
+bloque_y = -bloque_alto
+bloque_color = NEGRO
+
+esta_jugando = True
+while esta_jugando:
+    tiempo.tick(50)
+    #Evento de cierre
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            pygame.quit()
+    
+    #Movimiento de la figura
+    teclas = pygame.key.get_pressed()
+    if teclas[pygame.K_LEFT] and auto_x - auto_velocidad >= 0:
+        auto_x -= auto_velocidad 
+    if teclas[pygame.K_RIGHT] and auto_x+auto_ancho+auto_velocidad < ANCHO_VENTANA:
+        auto_x += auto_velocidad
+
+    #MOvimiento de los bloques
+    bloque_y += bloque_velocidad
+    #Comprobar si el bloque cae completamente
+    if bloque_y > ALTO_VENTANA:
+        bloque_y = -bloque_ancho
+        bloque_x = random.randint(0,ANCHO_VENTANA-bloque_ancho)
+        bloque_velocidad += 1
+        bloque_ancho = random.randint(0,ANCHO_VENTANA//3)
+
+    # Comprobar colisiones
+    if bloque_y+bloque_alto > auto_y  and auto_x+auto_ancho > bloque_x and auto_x < bloque_x+bloque_ancho:
+        esta_jugando = False
+        auto_imagen = pygame.image.load("explode.png")
+        sonido_choque.play()
+
+    #dibujar todos los elementos del juego
+    ventana.blit(fondo,(0,0))
+    ventana.blit(auto_imagen, (auto_x,auto_y))
+    pygame.draw.rect(ventana, bloque_color, (bloque_x, bloque_y, bloque_ancho, bloque_alto))
+    pygame.display.update()
+
+pygame.quit()
