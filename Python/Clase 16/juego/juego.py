@@ -13,6 +13,9 @@ tiempo = pygame.time.Clock()
 NEGRO = (0,0,0)
 GRIS = (200,200,200)
 BLANCO = (255,255,255)
+ROJO = (255,0,0)
+AMARILLO = (255,255,0)
+VERDE = (0,255,0)
 
 #atributos de figuras
 rect_ancho = 100
@@ -33,6 +36,13 @@ auto_y = ALTO_VENTANA - auto_alto
 #Atributos de la ventana
 fondo = pygame.image.load("fondo.png")
 sonido_choque = pygame.mixer.Sound('snd/choque.wav')
+sonido_caida = pygame.mixer.Sound('snd/caida.wav')
+musica_fondo = pygame.mixer.music.load('snd/clearday.mp3')
+pygame.mixer.music.play(-1)
+
+#textos del juego
+texto_puntos = pygame.font.SysFont('comicsans', 30, True)
+puntaje = 0
 
 #variables de Bloques
 bloque_velocidad = 10
@@ -40,9 +50,9 @@ bloque_alto = 100
 bloque_ancho = 100
 bloque_x = random.randint(0,ANCHO_VENTANA-bloque_ancho)
 bloque_y = -bloque_alto
-bloque_color = NEGRO
+bloque_color = random.choice([ROJO,VERDE,AMARILLO])
 
-esta_jugando = True
+esta_jugando = True 
 while esta_jugando:
     tiempo.tick(50)
     #Evento de cierre
@@ -65,17 +75,28 @@ while esta_jugando:
         bloque_x = random.randint(0,ANCHO_VENTANA-bloque_ancho)
         bloque_velocidad += 1
         bloque_ancho = random.randint(0,ANCHO_VENTANA//3)
+        bloque_color = random.choice([ROJO,VERDE,AMARILLO])
+        sonido_caida.play()
+        #puntaje += 1
 
     # Comprobar colisiones
     if bloque_y+bloque_alto > auto_y  and auto_x+auto_ancho > bloque_x and auto_x < bloque_x+bloque_ancho:
-        esta_jugando = False
-        auto_imagen = pygame.image.load("explode.png")
-        sonido_choque.play()
+        if bloque_color == ROJO:
+            esta_jugando = False
+            auto_imagen = pygame.image.load("explode.png")
+            sonido_choque.play()
+        if bloque_color == AMARILLO:
+            puntaje = 0
+        if bloque_color == VERDE:
+            puntaje += 5
 
     #dibujar todos los elementos del juego
     ventana.blit(fondo,(0,0))
     ventana.blit(auto_imagen, (auto_x,auto_y))
     pygame.draw.rect(ventana, bloque_color, (bloque_x, bloque_y, bloque_ancho, bloque_alto))
+    puntos = texto_puntos.render('Puntaje: '+str(puntaje), 1, NEGRO)
+    ventana.blit(puntos, (350,10))
     pygame.display.update()
 
+pygame.time.delay(2000)
 pygame.quit()
