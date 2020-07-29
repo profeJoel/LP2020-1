@@ -11,6 +11,7 @@ ALTO_VENTANA = 480
 ventana = pygame.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
 pygame.display.set_caption("EL JUEGAZO DE LP")
 reloj = pygame.time.Clock()
+nivel = 0
 
 # Seccion del personaje
 class personaje(object):
@@ -60,7 +61,7 @@ class personaje(object):
             pygame.draw.rect(cuadro, (255,0,0), (self.zona_impacto[0], self.zona_impacto[1] - 20, 50, 10))
             pygame.draw.rect(cuadro, (0,128,0), (self.zona_impacto[0], self.zona_impacto[1] - 20, 50 - (5 * (10 - self.salud)), 10)) # 45, 245, 0
 
-            pygame.draw.rect(cuadro, (255,0,0), self.zona_impacto, 2)
+            #pygame.draw.rect(cuadro, (255,0,0), self.zona_impacto, 2)
         
         else:
             if self.zona_impacto[0] != -1:
@@ -164,7 +165,7 @@ class proyectil(object):
     def dibujar(self, cuadro):
         self.zona_impacto = (self.x - self.radio, self.y - self.radio, self.radio * 2, self.radio * 2)
         pygame.draw.circle(cuadro, self.color, (self.x, self.y), self.radio)
-        pygame.draw.rect(cuadro, (255, 0, 0), self.zona_impacto, 2)
+        #pygame.draw.rect(cuadro, (255, 0, 0), self.zona_impacto, 2)
 
     def impacta_a(self, alguien):
         if alguien.salud > 0:
@@ -208,6 +209,10 @@ def repitar_cuadro_juego():
         ventana.blit(imagen_fondo[nivel], (0,0))
     else:
         ventana.fill((0,0,0))
+    puntos = texto_puntos.render("PUNTAJE: " + str(puntaje), 1, (255,0,0))
+    nivel_actual = texto_nivel.render("NIVEL: " + str(nivel), 1, (255,0,0))
+    ventana.blit(puntos, (350,10))
+    ventana.blit(nivel_actual, (350,30))
     heroe.dibujar(ventana)
     villano.dibujar(ventana)
     for bala in balas:
@@ -223,8 +228,12 @@ while repetir:
     nivel_maximo = 3
     gana = False
 
-    heroe = personaje(ANCHO_VENTANA//2, ALTO_VENTANA//2, "heroe", ANCHO_VENTANA)
-    villanos = [personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800)]
+    puntaje = 0
+    texto_puntos = pygame.font.SysFont("comicsans", 30, True)
+    texto_nivel = pygame.font.SysFont("comicsans", 30, True)
+
+    heroe = personaje(ANCHO_VENTANA//2, ALTO_VENTANA - 100, "heroe", ANCHO_VENTANA)
+    villanos = [personaje(10, ALTO_VENTANA - 100, "villano", 800), personaje(10, ALTO_VENTANA  - 100, "villano", 800), personaje(10, ALTO_VENTANA - 100, "villano", 800), personaje(10, ALTO_VENTANA - 100, "villano", 800)]
     villano = villanos[nivel]
 
     imagen_fondo = [pygame.image.load('img/bg0.jpg'), pygame.image.load('img/bg.jpg'),pygame.image.load('img/bg1.jpg'), pygame.image.load('img/bg2.jpg')]
@@ -286,6 +295,7 @@ while repetir:
 
         if villano.se_encuentra_con(heroe):
             heroe.es_golpeado()
+            puntaje -= 5
 
         #Manejo de los disparos
         if tanda_disparos > 0:
@@ -307,7 +317,7 @@ while repetir:
                 direccion = 0
             
             if len(balas) < 5 and direccion != 0:
-                balas.append(proyectil(round(heroe.x + heroe.ancho//2), round(heroe.y + heroe.alto//2), 10, (0, 0, 0), direccion))
+                balas.append(proyectil(round(heroe.x + heroe.ancho//2), round(heroe.y + heroe.alto//2), 5, (0, 0, 0), direccion))
                 sonido_disparo.play()
                 #print(len(balas))
 
@@ -316,6 +326,7 @@ while repetir:
                 bala.impacta_a(villano)
                 balas.pop(balas.index(bala))
                 sonido_impacto.play()
+                puntaje += 1
 
             # Movimiento del proyectil (cada proyectil)
             if bala.x < ANCHO_VENTANA and bala.x > 0:
@@ -332,4 +343,52 @@ while repetir:
             repetir = False
 
         repitar_cuadro_juego()
+
+    """
+    Ciclo de termino de juego
+    """
+
+    esta_en_final = True
+    while esta_en_final:
+        reloj.tick(27)
+        
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
+        
+        ventana.fill((0,0,0))
+
+        titulo = texto_intro.render("JUEGO TERMINADO", 1, (255, 0, 0))
+        texto_resultado = pygame.font.SysFont("console", 80, True)
+        if gana:
+            resultado = texto_resultado.render("Haz Ganado! UWU", 1, (255,0,0))
+        else:
+            resultado = texto_resultado.render("Haz Perdido! (F)", 1, (255,0,0))
+        
+        pts = texto_intro.render("PUNTAJE TOTAL: " + str(puntaje), 1, (255,0,0))
+
+        instrucciones = texto_intro.render("Presione ENTER para Cerrar el Juegazo...", 1, (255,255,255))
+        reintento = texto_intro.render("Presione R para volver al juegazo...", 1, (255,255,255))
+
+        ventana.blit(titulo, (ANCHO_VENTANA//2-titulo.get_width()//2, 10))
+        ventana.blit(pts, (ANCHO_VENTANA//2 - pts.get_width()//2, 100))
+        ventana.blit(resultado, (ANCHO_VENTANA//2 - resultado.get_width()//2, 200))
+        ventana.blit(instrucciones, (ANCHO_VENTANA//2 - instrucciones.get_width()//2, 300))
+        ventana.blit(reintento, (ANCHO_VENTANA//2 - reintento.get_width()//2, 350))
+
+        pygame.display.update()
+
+        teclas = pygame.key.get_pressed()
+
+        if teclas[pygame.K_RETURN]:
+            esta_en_final = False
+            repetir = False
+
+        if teclas[pygame.K_r]:
+            repetir = True
+            esta_en_final = False
+
+            del(heroe)
+            del(villano)
+
 pygame.quit()
