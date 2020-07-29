@@ -1,3 +1,6 @@
+"""
+Documentacion del Juego
+"""
 import pygame
 from pygame.locals import *
 
@@ -50,7 +53,7 @@ class personaje(object):
                 self.contador_pasos += 1
 
             else:
-                cuadro.blit(self.quieto, (self.x,self.y))
+                cuadro.blit(self.quieto, (self.x, self.y))
             
             self.zona_impacto = (self.x+15, self.y+10, 30, 50)
             #crear la barra de vida
@@ -86,9 +89,9 @@ class personaje(object):
         if self.ha_saltado: # accion de saltar
             if self.impulso_salto >= -10:
                 if self.impulso_salto < 0:
-                    self.y -= (self.impulso_salto**2) * 0.5 * -1
+                    self.y -= int((self.impulso_salto**2) * 0.5 * -1)
                 else:
-                    self.y -= (self.impulso_salto**2) * 0.5
+                    self.y -= int((self.impulso_salto**2) * 0.5)
                 self.impulso_salto -= 1
             else:
                 self.ha_saltado = False
@@ -105,10 +108,10 @@ class personaje(object):
                 self.va_izquierda = False
                 self.contador_pasos = 0
 
-    def se_mueve_solo(self):
+    def se_mueve_solo(self, nivel):
         if self.velocidad > 0:
             if self.x + self.velocidad < self.camino[1]: # dentro del rango del camino predefinido
-                self.x += self.velocidad
+                self.x += self.velocidad * nivel
                 self.va_derecha = True
                 self.va_izquierda = False
             else:
@@ -116,7 +119,7 @@ class personaje(object):
                 self.contador_pasos = 0
         else:
             if self.x - self.velocidad > self.camino[0]: # dentro del rango del camino
-                self.x += self.velocidad
+                self.x += self.velocidad * nivel
                 self.va_izquierda = True
                 self.va_derecha = False
             else:
@@ -171,10 +174,40 @@ class proyectil(object):
             del(alguien)
 
 
+def subir_nivel():
+    global nivel
+    global nivel_maximo
+    global heroe
+    global villano
+    global musica_fondo
+    global ventana
+    global esta_jugando
+    global gana
 
+    nivel += 1
+
+    texto = pygame.font.SysFont('comicsans', 100)
+    marcador = texto.render("GANASTE!", 1, (255, 0, 0))
+    ventana.blit(marcador, (marcador.get_width()//2, 200))
+    pygame.display.update()
+    pygame.time.delay(2000)
+
+    if nivel > nivel_maximo:
+        pygame.mixer.music.stop()
+        gana = True
+        esta_jugando = False
+    else:
+        villano = villanos[nivel]
+        pygame.mixer.music.stop()
+        musica_fondo = pygame.mixer.music.load(ruta_musica[nivel])
+        pygame.mixer.music.play(-1)
 
 def repitar_cuadro_juego():
-    ventana.blit(imagen_fondo, (0,0))
+
+    if nivel <= nivel_maximo:
+        ventana.blit(imagen_fondo[nivel], (0,0))
+    else:
+        ventana.fill((0,0,0))
     heroe.dibujar(ventana)
     villano.dibujar(ventana)
     for bala in balas:
@@ -186,10 +219,19 @@ repetir = True
 
 while repetir:
 
-    heroe = personaje(ANCHO_VENTANA//2, ALTO_VENTANA//2, "heroe", ANCHO_VENTANA)
-    villano = personaje(0, ALTO_VENTANA//2, "villano", ANCHO_VENTANA)
+    nivel = 0
+    nivel_maximo = 3
+    gana = False
 
-    imagen_fondo = pygame.image.load('img/bg.jpg')
+    heroe = personaje(ANCHO_VENTANA//2, ALTO_VENTANA//2, "heroe", ANCHO_VENTANA)
+    villanos = [personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800), personaje(10, ALTO_VENTANA//2, "villano", 800)]
+    villano = villanos[nivel]
+
+    imagen_fondo = [pygame.image.load('img/bg0.jpg'), pygame.image.load('img/bg.jpg'),pygame.image.load('img/bg1.jpg'), pygame.image.load('img/bg2.jpg')]
+    ruta_musica = ["snd/dubstep.mp3","snd/moose.mp3","snd/evolution.mp3","snd/epic.mp3"]
+    musica_fondo = pygame.mixer.music.load(ruta_musica[nivel])
+    pygame.mixer.music.play(-1) # entero -> cantidad de veces que se puede repetir la musica, si es -1 es repetir infinitamente
+    pygame.mixer.music.set_volume(0.1)
 
     balas = []
     direccion = 0 # 1 se mueve a la derecha -> -1 se mueve a la izquierda -> 0 no se mueve
@@ -198,9 +240,38 @@ while repetir:
     sonido_disparo = pygame.mixer.Sound("snd/bullet.wav")
     sonido_impacto = pygame.mixer.Sound("snd/hit.wav")
 
+    """
+    Ciclo de Introduccion
+    """
+    texto_intro = pygame.font.SysFont('console', 30, True)
+    personaje_intro = personaje(50, 150, "heroe", 700)
+    esta_en_intro = True
+    while esta_en_intro:
+        reloj.tick(27)
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
 
-    esta_jugando = True
+        ventana.fill((0,0,0))
+        titulo = texto_intro.render("EL JUEGAZO", 1, (255, 0, 0))
+        instrucciones = texto_intro.render("Presione ENTER para comenzar el Juegazo...", 1, (255,255,255))
+        personaje_intro.se_mueve_solo(2)
 
+        ventana.blit(titulo, ((ANCHO_VENTANA//2) - titulo.get_width()//2, 10))
+        ventana.blit(instrucciones, ((ANCHO_VENTANA//2) - instrucciones.get_width()//2, 300))
+
+        teclas = pygame.key.get_pressed()
+
+        if teclas[pygame.K_RETURN]:
+            esta_en_intro = False
+            esta_jugando = True
+        
+        personaje_intro.dibujar(ventana)
+        pygame.display.update()
+
+    """
+    Ciclo del Juego
+    """
     while esta_jugando:
         reloj.tick(27)
 
@@ -211,7 +282,7 @@ while repetir:
         teclas = pygame.key.get_pressed()
         heroe.se_mueve_segun(teclas, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_SPACE)
         #villano.se_mueve_segun(teclas, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_x)
-        villano.se_mueve_solo()
+        villano.se_mueve_solo(nivel)
 
         if villano.se_encuentra_con(heroe):
             heroe.es_golpeado()
@@ -224,7 +295,7 @@ while repetir:
         
         # manejo del tiempo entre disparos
         tiempo_entre_disparo += 1
-        if tiempo_entre_disparo > 5:
+        if tiempo_entre_disparo > 1:
             tiempo_entre_disparo = 0
 
         if teclas[pygame.K_x] and tanda_disparos == 0 and tiempo_entre_disparo == 0:
@@ -254,12 +325,11 @@ while repetir:
 
         # COnsultar si se sube de nivel o se pierde
         if villano.salud <= 0:
-            print("El Heroe ha ganado")
+            subir_nivel()
 
         if heroe.salud <= 0:
             esta_jugando = False
             repetir = False
-            print("El Heroe ha perdido")
 
         repitar_cuadro_juego()
 pygame.quit()
