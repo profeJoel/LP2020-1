@@ -136,6 +136,39 @@ class personaje(object):
 
         return R1_de > R2_iz and R1_iz < R2_de and R1_ar < R2_ab and R1_ab > R2_ar
 
+    def es_golpeado(self):
+        self.ha_saltado = False
+        self.va_derecha = False
+        self.va_izquierda = False
+        self.impulso_salto = 10
+        self.contador_pasos = 0
+        self.x = 100
+        self.y = 410
+        self.salud -= 5
+        pygame.time.delay(2000)
+
+
+class proyectil(object):
+    def __init__(self, x, y, radio, color, direccion):
+        self.x = x
+        self.y = y
+        self.radio = radio
+        self.color = color
+        self.direccion = direccion
+        self.velocidad = 8 * direccion
+        self.zona_impacto = (self.x - self.radio, self.y - self.radio, self.radio * 2, self.radio * 2)
+
+    def dibujar(self, cuadro):
+        self.zona_impacto = (self.x - self.radio, self.y - self.radio, self.radio * 2, self.radio * 2)
+        pygame.draw.circle(cuadro, self.color, (self.x, self.y), self.radio)
+        pygame.draw.rect(cuadro, (255, 0, 0), self.zona_impacto, 2)
+
+    def impacta_a(self, alguien):
+        if alguien.salud > 0:
+            alguien.salud -= 1
+        else:
+            alguien.es_invisible = False
+            del(alguien)
 
 
 
@@ -144,6 +177,8 @@ def repitar_cuadro_juego():
     ventana.blit(imagen_fondo, (0,0))
     heroe.dibujar(ventana)
     villano.dibujar(ventana)
+    for bala in balas:
+        bala.dibujar(ventana)
     pygame.display.update()
 
 # Dentro del Ciclo principal
@@ -155,6 +190,14 @@ while repetir:
     villano = personaje(0, ALTO_VENTANA//2, "villano", ANCHO_VENTANA)
 
     imagen_fondo = pygame.image.load('img/bg.jpg')
+
+    balas = []
+    direccion = 0 # 1 se mueve a la derecha -> -1 se mueve a la izquierda -> 0 no se mueve
+    tanda_disparos = 0
+    tiempo_entre_disparo = 0
+    sonido_disparo = pygame.mixer.Sound("snd/bullet.wav")
+    sonido_impacto = pygame.mixer.Sound("snd/hit.wav")
+
 
     esta_jugando = True
 
@@ -171,8 +214,52 @@ while repetir:
         villano.se_mueve_solo()
 
         if villano.se_encuentra_con(heroe):
+            heroe.es_golpeado()
+
+        #Manejo de los disparos
+        if tanda_disparos > 0:
+            tanda_disparos += 1
+        if tanda_disparos > 3:
+            tanda_disparos = 0
+        
+        # manejo del tiempo entre disparos
+        tiempo_entre_disparo += 1
+        if tiempo_entre_disparo > 5:
+            tiempo_entre_disparo = 0
+
+        if teclas[pygame.K_x] and tanda_disparos == 0 and tiempo_entre_disparo == 0:
+            if heroe.va_izquierda:
+                direccion = -1
+            elif heroe.va_derecha:
+                direccion = 1
+            else:
+                direccion = 0
+            
+            if len(balas) < 5 and direccion != 0:
+                balas.append(proyectil(round(heroe.x + heroe.ancho//2), round(heroe.y + heroe.alto//2), 10, (0, 0, 0), direccion))
+                sonido_disparo.play()
+                #print(len(balas))
+
+        for bala in balas:
+            if villano.se_encuentra_con(bala):
+                bala.impacta_a(villano)
+                balas.pop(balas.index(bala))
+                sonido_impacto.play()
+
+            # Movimiento del proyectil (cada proyectil)
+            if bala.x < ANCHO_VENTANA and bala.x > 0:
+                bala.x += bala.velocidad
+            else:
+                balas.pop(balas.index(bala))
+
+        # COnsultar si se sube de nivel o se pierde
+        if villano.salud <= 0:
+            print("El Heroe ha ganado")
+
+        if heroe.salud <= 0:
             esta_jugando = False
             repetir = False
+            print("El Heroe ha perdido")
 
         repitar_cuadro_juego()
 pygame.quit()
