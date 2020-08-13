@@ -95,10 +95,14 @@ while esta_jugando:
     # IA 
     if bloque_y + bloque_alto > auto_y - IA_vigia  and auto_x + auto_ancho > bloque_x and auto_x < bloque_x + bloque_ancho:
         if bloque_color == ROJO or bloque_color == AMARILLO:
-            if auto_x - bloque_ancho > 0:
+            if auto_x - bloque_ancho > 0: # and (bloque_x + bloque_ancho)//2 < (auto_x + auto_ancho)//2:
                 auto_x -= bloque_ancho
-            elif auto_x + auto_ancho + bloque_ancho < ANCHO_VENTANA:
+            elif auto_x + auto_ancho + bloque_ancho < ANCHO_VENTANA: # and (bloque_x + bloque_ancho)//2 >= (auto_x + auto_ancho)//2:
                 auto_x += bloque_ancho
+    if bloque_y + bloque_alto > auto_y - IA_vigia:
+        if bloque_color == VERDE:
+            auto_x += bloque_x - auto_x
+
 
     #dibujar todos los elementos del juego
     ventana.blit(fondo,(0,0))
@@ -108,6 +112,7 @@ while esta_jugando:
     ventana.blit(puntos, (350,10))
     pygame.display.update()
 
+pygame.time.delay(2000)
 #pantalla final
 ventana.fill((0,0,0))
 puntos = texto_puntos.render('Puntaje Total = '+ str(puntaje), 1, BLANCO)
